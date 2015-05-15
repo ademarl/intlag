@@ -1,0 +1,205 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+#ifndef BOX_2D_H
+#define BOX_2D_H
+
+#include <assert.h>
+#include <vector>
+#include <algorithm>
+#include "interval_lib.h"
+using namespace std;
+
+
+template <class T>
+class Box2D{
+
+  public:
+
+		Box2D() {
+      lins = cols = 0;
+    }
+
+		~Box2D() { }
+
+    Box2D(int n) {
+      typename vector< Interval<T> >::iterator it = elements.begin();
+      elements.insert(it, n, Interval<T>());
+      lins = n; cols = 1;
+    }
+
+    Box2D(int n, int m) {
+      typename vector< Interval<T> >::iterator it = elements.begin();
+      elements.insert(it, n*m, Interval<T>());
+      lins = n; cols = m;
+    }
+
+    Box2D(Interval<T> a, int n) {
+      typename vector< Interval<T> >::iterator it = elements.begin();
+      elements.insert(it, n, a);
+      lins = n; cols = 1;
+    }
+
+    Box2D(Interval<T> a, int n, int m) {
+      typename vector< Interval<T> >::iterator it = elements.begin();
+      elements.insert(it, n*m, a);
+      lins = n; cols = m;
+    }
+
+    Box2D(const Interval<T>* a, int n) {
+			elements.assign(a, a+n);
+      lins = n; cols = 1;
+    }
+
+    Box2D(const Interval<T>* a, int n, int m) {
+			elements.assign(a, a+n*m);
+      lins = n; cols = 1;
+    }
+
+    Box2D(const Box2D<T> &x) {
+      lins = x.lins;
+      cols = x.cols;
+      elements = x.elements;
+    }
+
+		Interval<T>const* data() const {
+			return &elements[0];
+		}
+
+		Interval<T>* data() {
+			return &elements[0];
+		}
+
+
+    Interval<T> at (int n) {
+      if (n >= (int)elements.size() || n < 0)
+        throw out_of_range("Box2D index out of range.");
+      return elements.at(n);
+    }
+
+		Interval<T> operator[] (int n) {
+      if (n >= (int)elements.size() || n < 0)
+        throw out_of_range("Box2D index out of range.");
+			return elements[n];
+		}
+
+    int lines() const {
+      return lins;
+    }
+
+    int columns() const {
+      return cols;
+    }
+
+		bool empty() {
+			return elements.empty();
+		}
+
+    template <class F>
+    Box2D& operator=(const Interval<F> *rhs);
+    template <class F>
+    Box2D& operator=(const Box<F> &rhs);
+    template <class F>
+    Box2D& operator=(const Box2D<F> &rhs);
+
+	private:
+    int lins, cols;
+		vector< Interval<T> > elements;
+
+};
+
+
+// Logical comparison
+template <class T, class F> inline
+bool operator==(const Box2D<T>& lhs, const Interval<F>* rhs)
+{
+  if (std::equal(lhs.begin(), lhs.end(), rhs)
+    return true;
+  return false;
+}
+
+
+template <class T, class F> inline
+bool operator==(const Interval<T>& lhs, const Box2D<F>& rhs)
+{
+  if (std::equal(rhs.begin(), rhs.end(), lhs)
+    return true;
+  return false;
+}
+
+template <class T, class F> inline
+bool operator==(const Box2D<T>& lhs, const Box<F>* rhs)
+{
+  if (std::equal(lhs.begin(), lhs.end(), rhs.data())
+    return true;
+  return false;
+}
+
+
+template <class T, class F> inline
+bool operator==(const Box<T>& lhs, const Box2D<F>& rhs)
+{
+  if (std::equal(rhs.begin(), rhs.end(), lhs.data())
+    return true;
+  return false;
+}
+
+
+template <class T, class F> inline
+bool operator==(const Box2D<T>& lhs, const Box2D<F>& rhs)
+{
+  if (std::equal(lhs.begin(), lhs.end(), rhs.begin())
+    return true;
+  return false;
+}
+
+
+template <class T, class F> inline
+bool operator!=(const Box2D<T>& lhs, const F& rhs)
+{
+  return !(lhs == rhs);
+}
+
+template <class T, class F> inline
+bool operator!=(const F& lhs, const Box2D<T>& rhs)
+{
+  return !(lhs == rhs);
+}
+
+
+// Assignments
+template <class T>
+template <class F> inline
+Box2D<T>& Box2D<T>::operator=(const Interval<F> *rhs)
+{
+    elements.assign(rhs, rhs + this->size());
+    return *this;
+}
+
+
+template <class T>
+template <class F> inline
+Box2D<T>& Box2D<T>::operator=(const Box<F> &rhs)
+{
+    elements = rhs.elements;
+    return *this;
+}
+
+
+template <class T>
+template <class F> inline
+Box2D<T>& Box2D<T>::operator=(const Box2D<F> &rhs)
+{
+    elements = rhs.elements;
+    return *this;
+}
+
+
+#endif

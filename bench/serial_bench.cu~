@@ -1,0 +1,181 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+#ifndef SERIAL_BENCH_H
+#define SERIAL_BENCH_H
+
+
+#include "aux/case.h"
+#include "aux/reference.h"
+
+#include "../include/blas/serial_blas.h"
+#include "gtest/gtest.h"
+
+
+namespace intlag {
+namespace bench {
+
+
+//----------------------- Fixture --------------------------------------------//
+
+class SerialBench : public BenchTest {
+  public:
+
+    SerialBench() {
+      r = Reference::getInstance();
+    }
+    virtual ~SerialBench() {}
+
+    void SetUp() {}
+    void TearDown() {}
+
+    Reference* r;
+};
+
+
+//----------------------- Scal Bench -----------------------------------------//
+
+template <class T>
+class SerialBenchScal : public SerialBench  {
+   public:
+
+    void begin() {
+      n = r->length;
+      alpha = r->alpha;
+      x = (Interval<T>*) malloc(n*sizeof(Interval<T>));
+      acopy(n, r->x, x);
+    }
+
+    void run() {
+      scal(alpha, x, n);
+    }
+
+    void end() {
+      free(x);
+    }
+
+    int n;
+    Interval<T> *x, alpha;
+};
+BENCH_F_F(SerialBench, Scal, SerialBenchScal)
+
+
+//----------------------- AXPY Bench -----------------------------------------//
+
+template <class T>
+class SerialBenchAXPY : public SerialBench  {
+   public:
+
+    void begin() {
+      n = r->length;
+      alpha = r->alpha;
+      x = (Interval<T>*) malloc(n*sizeof(Interval<T>));
+      y = (Interval<T>*) malloc(n*sizeof(Interval<T>));
+      acopy(n, r->x, x);
+      acopy(n, r->y, y);
+    }
+
+    void run() {
+      axpy(alpha, x, y, n);
+    }
+
+    void end() {
+      free(x);
+      free(y);
+    }
+
+    int n;
+    Interval<T> *x, *y, alpha;
+};
+BENCH_F_F(SerialBench, AXPY, SerialBenchAXPY)
+
+
+//----------------------- Gemv Bench -----------------------------------------//
+
+
+template <class T>
+class SerialBenchGemv : public SerialBench  {
+   public:
+
+    void begin() {
+      n = r->length;
+      dim = std::sqrt(n);
+      alpha = r->alpha;
+      beta = r->beta;
+      A = (Interval<T>*) malloc(n*sizeof(Interval<T>));
+      x = (Interval<T>*) malloc(dim*sizeof(Interval<T>));
+      y = (Interval<T>*) malloc(dim*sizeof(Interval<T>));
+      acopy(n, r->x, A);
+      acopy(dim, r->y, x);
+      acopy(dim, r->y, y);
+    }
+
+    void run() {
+      gemv(dim, dim, alpha, beta, A, x, y);
+    }
+
+    void end() {
+      free(A);
+      free(x);
+      free(y);
+    }
+
+    int n, dim;
+    Interval<T> *A, *x, *y, alpha, beta;
+};
+BENCH_F_F(SerialBench, Gemv, SerialBenchGemv)
+
+
+//----------------------- Gemm Bench -----------------------------------------//
+
+
+template <class T>
+class SerialBenchGemm : public SerialBench  {
+   public:
+
+    void begin() {
+      n = r->length;
+      dim = std::sqrt(n);
+      alpha = r->alpha;
+      beta = r->beta;
+      A = (Interval<T>*) malloc(n*sizeof(Interval<T>));
+      B = (Interval<T>*) malloc(n*sizeof(Interval<T>));
+      C = (Interval<T>*) malloc(n*sizeof(Interval<T>));
+      acopy(n, r->x, A);
+      acopy(n, r->y, B);
+      acopy(n, r->y, C);
+    }
+
+    void run() {
+      gemm(dim, dim, dim, alpha, beta, A, B, C);
+    }
+
+    void end() {
+      free(A);
+      free(B);
+      free(C);
+    }
+
+    short iterations() { return 1;}
+
+    int n, dim;
+    Interval<T> *A, *B, *C, alpha, beta;
+};
+BENCH_F_F(SerialBench, Gemm, SerialBenchGemm)
+
+
+
+} // namespace bench
+} // namespace intlag
+
+#endif
+
+
+

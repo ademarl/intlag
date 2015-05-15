@@ -1,0 +1,30 @@
+
+// IMPORTANT: Include this file to use the library as a whole
+// IMPORTANT: You may configure this file by hand or use auto tune
+
+#ifndef ROUND_STATUS_H
+#define ROUND_STATUS_H
+
+// Series of usings
+using CudaScal = CudaGeneral;
+using CudaAxpy = CudaGeneral;
+using CudaAsum = CudaGeneral;
+using CudaDot = CudaGeneral;
+using CudaNorm2 = CudaGeneral;
+using CudaGemv = CudaGeneral;
+using CudaGemm = CudaGeneral;
+
+
+//#using CudaGemv = CudaGeneral;
+//#using CudaGemm = CudaShared;
+//#using CudaScal = CudaNoCheck;
+//#using CudaBlockSize<float> = 1024;
+//#using CudaBlockSize<double> = 256;
+
+#include "blas/cuda_blas.h"
+#include "blas/omp_blas.h"
+#include "blas/serial_blas.h"
+
+// include boxes and boxes2d
+
+#endif

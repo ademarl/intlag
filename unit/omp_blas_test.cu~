@@ -1,0 +1,213 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+#ifndef OMP_BLAS_TEST_CU
+#define OMP_BLAS_TEST_CU
+
+#include <math.h>
+#include "blas/serial_blas.h"
+#include "blas/omp_blas.h"
+#include "aux/test_interval.h"
+#include "aux/reference.h"
+#include "aux/test_interval.h"
+#include "gtest/gtest.h"
+
+#include "aux/ulp.h"
+
+
+using namespace intlag;
+
+
+class OMPBlasTest : public ::testing::Test {
+  protected:
+
+    OMPBlasTest() {
+      ref = Reference::getInstance();
+    }
+    virtual ~OMPBlasTest(){}
+
+    virtual void SetUp()
+    {
+      for(int i = 0; i < 9; ++i) {
+          a[i] = Interval<float>(i);
+          b[i] = Interval<float>(-i, i);
+          c[i] = Interval<float>(i-5, i+i*i);
+      }
+      for(int i = 0; i < 10000; ++i) {
+          x[i] = Interval<float>(i);
+          y[i] = Interval<float>(-i, i);
+          z[i] = Interval<float>(i-5000, i+i*i);
+      }
+
+      for(int i = 0; i < 9; ++i) {
+          da[i] = Interval<double>(i);
+          db[i] = Interval<double>(-i, i);
+          dc[i] = Interval<double>(i-5, i+i*i);
+      }
+      for(int i = 0; i < 10000; ++i) {
+          dx[i] = Interval<double>(i);
+          dy[i] = Interval<double>(-i, i);
+          dz[i] = Interval<double>(i-5000, i+i*i);
+      }
+    }
+    virtual void TearDown() {}
+
+    Reference* ref;
+
+    Interval<float> a[9], b[9], c[9];
+    Interval<float> x[10000], y[10000], z[10000];
+    Interval<double> da[9], db[9], dc[9], dx[10000], dy[10000], dz[10000];
+};
+
+
+
+
+/******************************** Tests ***************************************/
+
+
+TEST_F(OMPBlasTest, ACopy) {
+
+	omp_acopy(3, x, z);
+  omp_acopy(3, dx, dz);
+
+  for(int i = 0; i < 3; ++i){
+    EXPECT_FINTERVAL_EQ(z[i], x[i]);
+    EXPECT_DINTERVAL_EQ(dz[i], dx[i]);
+  }
+}
+
+
+TEST_F(OMPBlasTest, Swap) {
+
+	omp_swap(3, x, z);
+	omp_swap(3, dx, dy);
+
+  for(int i = 0; i < 3; ++i){
+    EXPECT_FINTERVAL_EQ(z[i], Interval<float>(i));
+    EXPECT_FINTERVAL_EQ(x[i], Interval<float>(i-5000, i+i*i));
+    EXPECT_DINTERVAL_EQ(dy[i], Interval<double>(i));
+    EXPECT_DINTERVAL_EQ(dx[i], Interval<double>(-i, i));
+  }
+}
+
+TEST_F(OMPBlasTest, Scal) {
+
+  omp_scal(-2.0, a, 9);
+  omp_scal(-2.3, b, 9);
+  omp_scal(3.5, dz, 5005);
+  for(int i = 0; i < 9; ++i) {
+    EXPECT_FLOAT_EQ(a[i].inf(), -2.0*i);
+    EXPECT_FLOAT_EQ(a[i].sup(), -2.0*i);
+    EXPECT_FLOAT_EQ(b[i].inf(), -2.3*i);
+    EXPECT_FLOAT_EQ(b[i].sup(), 2.3*i);
+  }
+
+  for(int i = 0; i < 5000; ++i) {
+    EXPECT_DOUBLE_EQ(dz[i].inf(), 3.5*(i-5000));
+    EXPECT_DOUBLE_EQ(dz[i].sup(), 3.5*(i+i*i));
+  }
+  EXPECT_DOUBLE_EQ(dz[5006].inf(), 6);
+  EXPECT_DOUBLE_EQ(dz[5006].sup(), (5006+5006*5006));
+};
+
+
+TEST_F(OMPBlasTest, AXPY) {
+
+  omp_axpy(18.4, b, a, 9);
+  omp_axpy(-2.2, b, c, 9);
+  omp_axpy(-3.3, dx, dy, 10000); 
+
+  for(int i = 0; i < 9; ++i) {
+    EXPECT_FINTERVAL_EQ(a[i], Interval<float>(-18.4*i+i, 18.4*i+i));
+    EXPECT_FINTERVAL_EQ(c[i], Interval<float>(-2.2*i+i-5, 2.2*i+i+i*i));
+  }
+
+  for(int i = 0; i < 10000; ++i) {
+    EXPECT_DINTERVAL_EQ(dy[i], Interval<double>(-3.3*i-i, -3.3*i+i));
+  }
+
+};
+
+
+TEST_F(OMPBlasTest, Gemv) {
+
+  Interval<float> out[3];
+
+  omp_acopy(3, b, out);
+  omp_gemv(1, 1, -2.5, 3.5, c, a, out);
+  EXPECT_FINTERVAL_EQ(out[0], -2.5*c[0]*a[0]+3.5*b[0]);
+
+  omp_acopy(3, b, out);
+  omp_gemv(2, 2, Interval<float>(-2,2), 0.0, c, a, out);
+  EXPECT_FINTERVAL_EQ(out[0], Interval<float>(-8.0,8.0));
+  EXPECT_FINTERVAL_EQ(out[1], Interval<float>(-24.0,24.0));
+
+  omp_gemv(3, 3, 2.0, 3.0, c, a, b);
+  EXPECT_FINTERVAL_EQ(b[0], Interval<float>(-20.0, 28.0));
+  EXPECT_FINTERVAL_EQ(b[1], Interval<float>(-5.0, 163.0));
+  EXPECT_FINTERVAL_EQ(b[2], Interval<float>(10.0, 406.0));
+  
+  Interval<double> x[10000], y[10000], z[10000], w[10000];
+  acopy(10000, ref->x, x);
+  acopy(10000, ref->y, y);
+  acopy(10000, ref->x, z);
+  acopy(10000, ref->x, w);
+
+  gemm(340, 27, 4.444, -3.5, x, y, w);
+  omp_gemm(340, 27, 4.444, -3.5, x, y, z);
+
+  for(int i = 0; i < 340; ++i)
+    EXPECT_FINTERVAL_EQ(z[i], w[i]);
+  for(int i = 340; i < 10000; ++i)
+    EXPECT_FINTERVAL_EQ(z[i], x[i]);
+
+
+};
+
+
+
+TEST_F(OMPBlasTest, Gemm) {
+
+  Interval<float> out[4];
+
+  omp_acopy(4, b, out);
+  omp_gemm(1, 1, 1, -2.5, 3.5, c, a, out);
+  EXPECT_FINTERVAL_EQ(out[0], -2.5*c[0]*a[0]+3.5*b[0]);
+
+  omp_acopy(4, b, out);
+  omp_gemm(2, 1, 2, -1.0, -5.5, c, b, out);
+  EXPECT_FINTERVAL_EQ(out[0], Interval<float>(0.0));
+  EXPECT_FINTERVAL_EQ(out[1], Interval<float>(-10.5,10.5));
+  EXPECT_FINTERVAL_EQ(out[2], Interval<float>(-11.0,11.0));
+  EXPECT_FINTERVAL_EQ(out[3], Interval<float>(-20.5,20.5));
+
+  omp_gemm(3, 3, 1, 2.0, 3.0, c, a, b);
+  EXPECT_FINTERVAL_EQ(b[0], Interval<float>(-20.0, 28.0));
+  EXPECT_FINTERVAL_EQ(b[1], Interval<float>(-5.0, 163.0));
+  EXPECT_FINTERVAL_EQ(b[2], Interval<float>(10.0, 406.0));
+
+  Interval<double> x[10000], y[10000], z[10000], w[10000];
+  acopy(10000, ref->x, x);
+  acopy(10000, ref->y, y);
+  acopy(10000, ref->x, z);
+  acopy(10000, ref->x, w);
+
+  gemm(340, 13, 27, 4.0, -3.5, x, y, w);
+  omp_gemm(340, 13, 27, 4.0, -3.5, x, y, z);
+
+  for(int i = 0; i < 340*27; ++i)
+    EXPECT_FINTERVAL_EQ(z[i], w[i]);
+  for(int i = 340*27; i < 10000; ++i)
+    EXPECT_FINTERVAL_EQ(z[i], x[i]);
+
+};
+
+
+
+#endif

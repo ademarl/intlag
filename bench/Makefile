@@ -1,0 +1,52 @@
+
+CC=nvcc -ccbin /usr/bin/g++-4.8
+FLAGS=-arch=sm_20 -lgmp -lmpfr -Xcompiler -fopenmp -O3 #-Xcompiler -mavx -Xcompiler -pg -Xcompiler -std=c++11
+GTEST=-Xcompiler -pthread -lgtest
+PATHS=-I ../include -I ../gtest-1.7.0/include -L ../gtest-1.7.0/build -I ../boost -I . -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
+#BOOST=-I ../boost
+
+all: intlag omp serial boost boost_omp kernel
+
+intlag: main.cu ../include cuda_bench.o reference.o #serial_bench.o omp_bench.o
+	$(CC) $(PATHS) $(FLAGS) $(GTEST) reference.o cuda_bench.o main.cu -o intlag
+
+kernel: main.cu ../include cuda_bench_kernel.o reference.o
+	$(CC) $(PATHS) $(FLAGS) $(GTEST) reference.o cuda_bench_kernel.o main.cu -o kernel
+
+omp: main.cu ../include reference.o  omp_bench.o
+	$(CC) $(PATHS) $(FLAGS) $(GTEST) reference.o omp_bench.o main.cu -o omp
+
+serial: main.cu ../include reference.o serial_bench.o
+	$(CC) $(PATHS) $(FLAGS) $(GTEST) reference.o serial_bench.o main.cu -o serial
+
+boost_omp: main.cu ../include reference.o boost_omp_bench.o
+	$(CC) $(PATHS) $(FLAGS) $(GTEST) reference.o boost_omp_bench.o main.cu -o boost_omp
+
+boost: main.cu ../include reference.o boost_bench.o
+	$(CC) $(PATHS) $(FLAGS) $(GTEST) reference.o boost_bench.o main.cu -o boost
+
+
+
+boost_omp_bench.o: ../include reference.o tests/boost_omp_bench.cu
+	$(CC) $(PATHS) $(FLAGS) $(PTHREAD) -c tests/boost_omp_bench.cu
+
+boost_bench.o: ../include reference.o tests/boost_bench.cu
+	$(CC) $(PATHS) $(FLAGS) $(PTHREAD) -c tests/boost_bench.cu
+
+serial_bench.o: ../include reference.o tests/serial_bench.cu
+	$(CC) $(PATHS) $(FLAGS) $(PTHREAD) -c tests/serial_bench.cu
+
+omp_bench.o: ../include reference.o tests/omp_bench.cu
+	$(CC) $(PATHS) $(FLAGS) $(PTHREAD) -c tests/omp_bench.cu
+
+cuda_bench.o: ../include reference.o tests/cuda_bench.cu
+	$(CC) $(PATHS) $(FLAGS) $(PTHREAD) -c tests/cuda_bench.cu
+
+cuda_bench_kernel.o: ../include reference.o tests/cuda_bench_kernel.cu
+	$(CC) $(PATHS) $(FLAGS) $(PTHREAD) -c tests/cuda_bench_kernel.cu
+
+reference.o: ../include aux/reference.h aux/reference.cu
+	$(CC) $(PATHS) $(FLAGS) -c aux/reference.cu
+
+clean:
+	rm -rf *.o intlag omp serial boost boost_omp

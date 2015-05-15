@@ -1,0 +1,71 @@
+// AXPY: alpha*x + y
+template<class T> inline __host__
+box_gpu<T> axpy_(T alpha, box_gpu<T> const &x, box_gpu<T> const &y) {
+	
+	int N = x.length();
+	DeviceData< interval_gpu<double> > d_x(N, x.data()), d_y(N, y.data()), d_z(N);
+
+	AXPY<<<blocks(N), threads(N)>>>(alpha, d_x.data(), d_y.data(), d_z.data(), N);
+
+  box_gpu<T> ret(N);
+	d_z.toHost(ret.data());
+	return ret;
+}
+
+
+// Sum of all elements
+template<class T> inline __host__
+interval_gpu<T> asum_(box_gpu<T> const &x) {
+	
+	int N = x.length();
+	DeviceData< interval_gpu<T> > d_x(N, x.data());
+
+	asum_loop(N, d_x);
+
+	interval_gpu<T> ret;
+	d_x.toHost(&ret, 1);
+	return ret;
+}
+
+
+// Dot Product
+template<class T> inline __host__
+interval_gpu<T> dot_(box_gpu<T> const &x, box_gpu<T> const &y) {
+	
+	int N = x.length();
+	DeviceData< interval_gpu<T> > d_x(N, x.data()), d_y(N, y.data()), d_z(N);
+
+	// Calculate Hadamard product
+	MULT<<<blocks(N), threads(N)>>>(d_x.data(), d_y.data(), d_z.data(), N);
+	CHECKED_CALL( cudaDeviceSynchronize() );
+
+	// Now sum all elements
+	asum_loop(N, d_z);
+
+	interval_gpu<T> ret;
+	d_z.toHost(&ret, 1);
+	return ret;
+}
+
+
+// Norm2
+template<class T> inline __host__
+interval_gpu<T> norm2_(box_gpu<T> const &x) {
+	
+	int N = x.length();
+	DeviceData< interval_gpu<T> > d_x(N, x.data()), d_y(N);
+
+	// Calculate Hadamard product
+	MULT<<<blocks(N), threads(N)>>>(d_x.data(), d_x.data(), d_y.data(), N);
+	CHECKED_CALL( cudaDeviceSynchronize() );
+
+	// Now sum all elements
+	asum_loop(N, d_y);
+
+	// Then, take the sqrt
+	SQRT<<<1,1>>>((d_y.data()), d_y.data());
+
+	interval_gpu<T> ret;
+	d_y.toHost(&ret, 1);
+	return ret;
+}

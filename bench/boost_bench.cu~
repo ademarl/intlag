@@ -1,0 +1,182 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+#ifndef BOOST_BENCH_H
+#define BOOST_BENCH_H
+
+#include "boost/numeric/interval.hpp"
+using boost::numeric::interval;
+using namespace boost::numeric;
+
+
+#include "aux/case.h"
+#include "aux/reference.h"
+
+#include "gtest/gtest.h"
+
+
+namespace intlag {
+namespace bench {
+
+//template<class T, class U>
+//void acopy(int n, Interval<T> const *x, interval<U> *y) {
+//	assert(y != NULL);
+
+//	try {
+//		for(int i = 0; i < n; ++i)
+//			y[i] = interval<T>(x[i].inf(), x[i].sup());
+//	}
+//	catch(std::exception e) { throw e; }
+//}
+
+
+template <class T, class F>
+void boost_scal(F alpha, interval<T>* x, int n) {
+	for (int j = 0; j < n; ++j)
+		x[j] = alpha * x[j];
+}
+
+
+template <class T, class F>
+void boost_axpy(F alpha, interval<T>* x, interval<T>* y, int n) {
+	for (int j = 0; j < n; ++j)
+		y[j] += alpha*x[j];
+}
+
+
+template <class T, class F>
+void boost_gemv(int n, int m, F alpha, F beta, interval<T> *A, interval<T> *x, interval<T> *y) {
+
+	for (int j = 0; j < m; ++j)
+		x[j] = alpha * x[j];
+
+	for (int i = 0; i < n; ++i) {
+		interval<T> sum = 0;
+		for (int j = 0; j < m; ++j)
+			sum += A[i*m + j]*x[j];
+		y[i] = beta*y[i] + sum;
+	}
+}
+
+
+template <class T, class F>
+void boost_gemm(int n, int m, int p, F alpha, F beta, interval<T> *A, interval<T> *B, interval<T> *C) {
+
+	if (n*m < m*p) {
+		for (int i = 0; i < n; ++i)
+			for (int j = 0; j < m; ++j)
+				A[i*m+j] = alpha * A[i*m+j];
+	}
+	else {
+		for (int i = 0; i < m; ++i)
+			for (int j = 0; j < p; ++j)
+				B[i*p+j] = alpha * B[i*p+j];
+	}
+
+	for (int i = 0; i < n; ++i) 
+		for (int j = 0; j < p; ++j) {
+			interval<T> sum = 0;
+			for (int k = 0; k < m; ++k)
+				sum += A[i*m+k]*B[j*p+k];
+			C[i*p+j] = beta*C[i*p+j] + sum;
+		}
+}
+//interval<T, interval_lib::policies<Rounding::unprotected, _> >
+
+//----------------------- Fixture --------------------------------------------//
+
+class BoostBench : public BenchTest {
+  public:
+
+    BoostBench() {
+      r = Reference::getInstance();
+    }
+    virtual ~BoostBench() {}
+
+    void SetUp() {}
+    void TearDown() {}
+
+    Reference* r;
+};
+
+
+//----------------------- Scal Bench -----------------------------------------//
+
+template <class T>
+class BoostBenchScal : public BoostBench  {
+   public:
+
+    void begin() {
+      n = r->length;
+      alpha = interval<T>((r->alpha).inf(), (r->alpha).sup());
+      x = (interval<T>*) malloc(n*sizeof(interval<T>));
+      acopy(n, r->x, x);
+    }
+
+    void run() {
+      boost_scal(alpha, x, n);
+    }
+
+    void end() {
+      free(x);
+    }
+
+    int n;
+    interval<T> *x, alpha;
+};
+BENCH_F_F(BoostBench, Scal, BoostBenchScal)
+
+
+//----------------------- Gemm Bench -----------------------------------------//
+
+
+template <class T>
+class BoostBenchGemm : public BoostBench  {
+   public:
+
+    void begin() {
+      n = r->length;
+      dim = std::sqrt(n);
+      alpha = interval<T>((r->alpha).inf(), (r->alpha).sup());
+      beta = interval<T>((r->beta).inf(), (r->beta).sup());
+      A = (interval<T>*) malloc(n*sizeof(interval<T>));
+      B = (interval<T>*) malloc(n*sizeof(interval<T>));
+      C = (interval<T>*) malloc(n*sizeof(interval<T>));
+      acopy(n, r->x, A);
+      acopy(n, r->y, B);
+      acopy(n, r->y, C);
+    }
+
+    void run() {
+      boost_gemm(dim, dim, dim, alpha, beta, A, B, C);
+    }
+
+    void end() {
+      free(A);
+      free(B);
+      free(C);
+    }
+
+    short iterations() { return 10;}
+
+    int n, dim;
+    interval<T> *A, *B, *C, alpha, beta;
+};
+BENCH_F_F(BoostBench, Gemm, BoostBenchGemm)
+
+
+
+} // namespace bench
+} // namespace intlag
+
+#endif
+
+
+

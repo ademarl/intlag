@@ -1,0 +1,158 @@
+//------------------------------------------------------------------------------
+// Copyright (c) 2013 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+#ifndef TEST_CASES_H
+#define TEST_CASES_H
+
+
+#include "../auxiliar/timer_aux.h"
+
+using namespace intlag;
+
+/////////////////////////////////////////////// BOOST-BASED ////////////////////
+
+typedef void (*blas_func1_t)(interval<float>*, int);
+Timer test_case(int n_iter, int n, interval<float>* x, blas_func1_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(x, n);
+	t.stop();
+	return t;
+}
+
+
+typedef void (*blas_func2_t)(interval<float>*, interval<float>*, int);
+Timer test_case(int n_iter, int n, interval<float>* x, interval<float>* y, blas_func2_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(x, y, n);
+	t.stop();
+	return t;
+}
+
+
+typedef void (*blas_func3_t)(float, interval<float>*, int);
+Timer test_case(int n_iter, int n, float alpha, interval<float>* x, blas_func3_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(alpha, x, n);
+	t.stop();
+	return t;
+}
+
+
+typedef void (*blas_func4_t)(float, interval<float>*, interval<float>*, int);
+Timer test_case(int n_iter, int n, float alpha, interval<float>* x, interval<float>* y, blas_func4_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(alpha, x, y, n);
+	t.stop();
+	return t;
+}
+
+typedef void (*blas_func_gemv_t)(int n, int m, float alpha, float beta, interval<float> *A, interval<float> *x, interval<float> *y);
+Timer test_case(int n_iter, int n, int m, float alpha, float beta, interval<float> *A, interval<float> *x, interval<float> *y, blas_func_gemv_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(n, m, alpha, beta, A, x, y);
+	t.stop();
+	return t;
+}
+
+
+typedef void (*blas_func_gemm_t)(int n, int m, int p, float alpha, float beta, interval<float> *A, interval<float> *B, interval<float> *C);
+Timer test_case(int n_iter, int n, int m, int p, float alpha, float beta, interval<float> *A, interval<float> *B, interval<float> *C, blas_func_gemm_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(n, m, p, alpha, beta, A, B, C);
+	t.stop();
+	return t;
+}
+
+/////////////////////////////////////////////// ~BOOST-BASED ///////////////////
+
+
+
+/////////////////////////////////////////////// GPU-BASED //////////////////////
+
+typedef bool (*blas_gpu1_t)(int, float, interval_gpu<float>*);
+Timer test_case(int n_iter, int n, float alpha, interval_gpu<float>* x, blas_gpu1_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(n, alpha, x);
+	t.stop();
+	return t;
+}
+
+
+typedef bool (*blas_gpu2_t)(int, float, interval_gpu<float> const*, interval_gpu<float> *);
+Timer test_case(int n_iter, int n, float alpha, interval_gpu<float> *x, interval_gpu<float> *y, blas_gpu2_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(n, alpha, x, y);
+	t.stop();
+	return t;
+}
+
+
+typedef bool (*blas_gpu3_t)(interval_gpu<float> *, int, interval_gpu<float> const *);
+Timer test_case(int n_iter, interval_gpu<float> *ret, int n, interval_gpu<float>* x, blas_gpu3_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(ret, n, x);
+	t.stop();
+	return t;
+}
+
+
+typedef bool (*blas_gpu4_t)(interval_gpu<float> *, int, interval_gpu<float> const *, interval_gpu<float> const *);
+Timer test_case(int n_iter, interval_gpu<float> *ret, int n, interval_gpu<float>* x, interval_gpu<float>* y, blas_gpu4_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i){
+		f(ret, n, x, y);
+	}
+	t.stop();
+	return t;
+}
+
+
+typedef bool (*blas_gemv_t)(int n, int m, float alpha, float beta, interval_gpu<float> const *A, interval_gpu<float> const *x, interval_gpu<float> *y);
+Timer test_case(int n_iter, int n, int m, float alpha, float beta, interval_gpu<float> *A, interval_gpu<float> *x, interval_gpu<float> *y, blas_gemv_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(n, m, alpha, beta, A, x, y);
+	t.stop();
+	return t;
+}
+
+
+typedef bool (*blas_gemm_t)(int n, int m, int p, float alpha, float beta, interval_gpu<float> const *A, interval_gpu<float> const *B, interval_gpu<float> *C);
+Timer test_case(int n_iter, int n, int m, int p, float alpha, float beta, interval_gpu<float> *A, interval_gpu<float> *B, interval_gpu<float> *C, blas_gemm_t f) {
+
+	Timer t;
+	for (int i = 0; i < n_iter; ++i)
+		f(n, m, p, alpha, beta, A, B, C);
+	t.stop();
+	return t;
+}
+/////////////////////////////////////////////// ~GPU-BASED /////////////////////
+
+
+#endif

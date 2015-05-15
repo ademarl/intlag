@@ -1,0 +1,29 @@
+#ifndef CUDA_BENCH_H
+#define CUDA_BENCH_H
+
+#include <fstream>
+
+#include "timer.h"
+#include "gtest/gtest.h"
+
+namespace bench
+{
+
+
+TEST(Nothing, TestBench)
+{
+    Timer t;
+    t.stop();
+
+    ASSERT_EQ(2, 2);
+
+    std::ofstream outs("benchmark.txt", std::fstream::app);
+    outs << "TestBench(seconds): " << t.getSeconds() << " seconds" << std::endl;
+    outs.flush();
+    outs.close();
+
+}
+
+} // namespace bench
+
+#endif

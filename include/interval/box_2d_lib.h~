@@ -1,0 +1,47 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+#ifndef Box_2D_LIB_H
+#define Box_2D_LIB_H
+
+#include "box_2d.h"
+#include "../serial_blas.h"
+
+// XXX: Careful, using macros to test for cudaErrors on 'CHECKED_CALL'
+// XXX: Careful, using macros to set blocks and threads when launching kernels, macro is defined in Box2D_interval.h
+
+
+// Box2D sum
+template<class T> inline //__host__
+Box2D<T> operator+(Box2D<T> const &x, Box2D<T> const &y) {
+	return Box2D();
+}
+
+// Box2D sum
+template<class T> inline //__host__
+Box2D<T> operator-(Box2D<T> const &x, Box2D<T> const &y) {
+	return Box2D();
+}
+
+// Box2D scalar multiplication of form alpha*x
+template<class T> inline __host__
+Box2D<T> operator*(T alpha, Box2D<T> const &x) {
+	return Box2D();
+}
+
+
+// Box2D scalar multiplication of form x*alpha
+template<class T> inline __host__
+Box2D<T> operator*(Box2D<T> const &x, T alpha) {
+	return alpha*x;
+}
+
+
+#endif

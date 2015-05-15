@@ -1,0 +1,21 @@
+import sys
+from random import *
+
+if (len(sys.argv) < 4):
+  print "Three arguments needed: the number of random pairs, the lower and upper ends of the interval desired"
+  exit(1)
+
+
+a = int(sys.argv[2])
+b = int(sys.argv[3])
+
+print int(sys.argv[1])
+
+# prints 2n+2 intervals
+for i in range(0, int(2*sys.argv[1]+ 2)):
+  x = uniform(a,b)
+  y = uniform(a,b)
+  if (x < y):
+    print "%0.18f" %x, "%0.18f" %y
+  else:
+    print "%0.18f" %y, "%0.18f" %x

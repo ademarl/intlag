@@ -1,0 +1,92 @@
+//------------------------------------------------------------------------------
+// Copyright (c) 2013 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+//This software contains source code provided by NVIDIA Corporation.
+
+
+
+#ifndef INTERVAL_CR_LIB_H
+#define INTERVAL_CR_LIB_H
+
+#include <stdio.h>
+#include "interval_cr.h"
+
+
+namespace intlag {
+
+
+
+// Arithmetic operations
+
+// Unary operators
+template<class T> inline __device__
+interval_cr<T> const &operator+(interval_cr<T> const &x)
+{
+    return x;
+}
+
+template<class T> inline __device__
+interval_cr<T> operator-(interval_cr<T> const &x)
+{
+    return interval_cr<T>(-x.center(), x.radius());
+}
+
+// Binary operators
+
+
+// SUM
+template<class T> inline __device__
+interval_cr<T> operator+(interval_cr<T> const &x, interval_cr<T> const &y)
+{
+    rounded_arith<T> rnd;
+		T center = rnd.add_rz(x.center(), y.center());
+    return interval_cr<T>( center,
+                            rnd.add_up( rnd.add_up(x.radius(), y.radius()), scalbln(fabs(center), -52) ) );
+}
+
+// Multiplication
+template<class T> inline __device__
+interval_cr<T> operator*(interval_cr<T> const &x, interval_cr<T> const &y)
+{
+    rounded_arith<T> rnd;
+		T center = rnd.mul_rz(x.center(), y.center());
+    return interval_cr<T>( center,
+														rnd.add_up(
+															rnd.add_up(
+																rnd.add_up(
+																	rnd.mul_up(x.radius(), y.radius() ),
+																	rnd.mul_up(x.radius(), fabs(y.center()))),
+																rnd.mul_up(y.radius(), fabs(x.center()))),
+															scalbln(fabs(center), -52) )  ); // folga pela aproximação do centro
+						
+}
+
+
+// Scalar Multiplication
+template<class T, class F> inline __device__
+interval_cr<T> operator*(F alpha, interval_cr<T> const &x)
+{
+    rounded_arith<T> rnd;
+		T center = rnd.mul_rz(alpha, x.center());
+    return interval_cr<T>( center,
+                            rnd.add_up(
+															rnd.mul_up(x.radius(), alpha ),
+															scalbln(fabs(center), -52)  )); // folga pela aproximação do centro
+}
+
+
+// REVISEME, using the left scalar multiplication
+template<class T, class F> inline __device__
+interval_cr<T> operator*(interval_cr<T> const &x, F alpha)
+{
+    return alpha*x;
+}
+
+
+} // namespace ilag
+#endif

@@ -1,0 +1,30 @@
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+#ifndef CUDA_GRID_H
+#define CUDA_GRID_H
+
+#define CudaBlockSize 27
+
+namespace intlag {
+
+
+//template<T> // will grid change between float and double? what about specific functions?
+class CudaGrid {
+  public :
+    static dim3 blocks(int N) {
+      return dim3((N+CudaBlockSize)/CudaBlockSize);
+    }
+
+    static dim3 threads(int N) {
+      return dim3(CudaBlockSize/3, CudaBlockSize/3);
+    }
+};
+
+} // namespace intlag
+#endif

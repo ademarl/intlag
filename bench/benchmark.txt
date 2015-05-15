@@ -1,0 +1,9 @@
+
+======================================================================
+
+IntLAG Benchmark
+
+Number of repetitions: 1
+Largest Array Size: 67108864
+Random Seed: 1431639205
+

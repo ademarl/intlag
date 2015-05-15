@@ -1,0 +1,117 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+
+#include "reference.h"
+
+// Defines a singleton class with random data inputs and reference results for all test operations
+
+
+namespace intlag
+{
+namespace bench
+{
+
+
+Reference* reference = NULL;
+
+void Reference::setValues(int argc, char** argv, int n){
+  // Not thread safe
+  if (reference == NULL) {
+    if (n == 0 && argc == 1) reference = new Reference();
+    else reference = new Reference(argc, argv, n);
+  }
+}
+
+
+Reference* Reference::getInstance() {
+  return reference;
+}
+
+
+// Generates a random number in [-MULTIPLIER, MULTIPLIER]
+Interval<double> Reference::random_interval() {
+  double x, y;
+  x = (2*MULTIPLIER*rand())/RAND_MAX - MULTIPLIER;
+  y = (2*MULTIPLIER*rand())/RAND_MAX - MULTIPLIER;
+  if(x > y){
+    double z = x;
+    x = y;
+    y = z;
+  }
+  return Interval<double>(x, y);
+}
+
+
+void Reference::random_init(int n){
+
+  length = n;
+
+  alpha = dalpha = random_interval();
+  beta = dbeta = random_interval();
+
+  x = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  y = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  dx = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  dy = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  if (x == NULL || y == NULL || dx == NULL || dy == NULL) {
+    printf("Error, not enough memory for benchmark reference values!\n");
+    exit(1);
+  }
+
+  for (int i = 0; i < length; ++i){
+    x[i] = dx[i] = random_interval();
+    y[i] = dy[i] = random_interval();
+  }
+}
+
+
+void Reference::input_init(std::istream& is) {
+  double aux, aux2;
+
+  while(1);
+
+  is >> length;
+
+	is >> aux; is >> aux2;
+	alpha = dalpha = Interval<double>(aux, aux2);
+	is >> aux; is >> aux2;
+	beta = dbeta = Interval<double>(aux, aux2);
+
+  x = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  y = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  dx = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  dy = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  if (x == NULL || y == NULL || dx == NULL || dy == NULL) {
+    printf("Error, not enough memory for benchmark reference values!\n");
+    exit(1);
+  }
+
+  for (int i = 0; i < length; ++i){
+    is >> aux; is >> aux2;
+    x[i] = dx[i] = Interval<double>(aux, aux2);
+	}
+	for (int i = 0; i < length; ++i){
+		is >> aux; is >> aux2;
+    y[i] = dy[i] = Interval<double>(aux, aux2);
+  }
+
+  while(1)
+  printf("y = %f %f\n", y[length-1], dy[length-1]);
+}
+
+
+
+} // namespace bench
+} // namespace intlag
+
+
+
+

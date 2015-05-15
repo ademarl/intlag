@@ -1,0 +1,51 @@
+
+#ifndef TIMER_AUX_H
+#define TIMER_AUX_H
+
+#include "helper_timer.h"
+
+class Timer {
+
+	public:
+
+		Timer() {
+			sdkCreateTimer(&t);
+			sdkResetTimer(&t);
+			sdkStartTimer(&t);
+		}
+
+		void reset() {
+			sdkResetTimer(&t);
+			sdkStartTimer(&t);
+		}
+
+		void stop() {
+			sdkStopTimer(&t);
+		}
+
+		double getSeconds() {
+			return sdkGetTimerValue(&t)/1000;
+		}
+
+
+	private:
+		StopWatchInterface* t;
+
+};
+
+
+
+StopWatchInterface* start_timer(){
+
+	StopWatchInterface *timer;
+	sdkCreateTimer(&timer);
+	sdkResetTimer(&timer);
+	sdkStartTimer(&timer);
+	return timer;
+}
+
+void end_timer(StopWatchInterface* t) {
+		sdkStopTimer(&t);
+}
+
+#endif

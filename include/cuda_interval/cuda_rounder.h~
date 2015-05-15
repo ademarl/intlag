@@ -1,0 +1,321 @@
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+// Wrapper for CUDA intrinsics for rounded arithmetics
+
+#ifndef CUDA_ROUNDER_H
+#define CUDA_ROUNDER_H
+
+
+namespace intlag {
+
+
+template<class F>
+class CudaRounder {
+  public:
+
+    __device__ inline static
+    F add_up(const F x, const F y);
+    __device__ inline static
+    F add_down(const F x, const F y);
+
+    __device__ inline static
+    F sub_up(const F x, const F y);
+    __device__ inline static
+    F sub_down(const F x, const F y);
+
+    __device__ inline static
+    F mul_up(const F x, const F y);
+    __device__ inline static
+    F mul_down(const F x, const F y);
+
+    __device__ inline static
+    F div_up(const F x, const F y);
+    __device__ inline static
+    F div_down(const F x, const F y);
+
+		__device__ inline static
+    F fma_up(const F a, const F x, const F y);
+		__device__ inline static
+    F fma_down(const F a, const F x, const F y);
+
+    __device__ inline static
+    F sqrt_up(const F x);
+    __device__ inline static
+    F sqrt_down(const F x);
+
+    __device__ inline static
+    F int_up(const F x);
+    __device__ inline static
+    F int_down(const F x);
+
+
+    __device__ inline static
+    F supremum();
+    __device__ inline static
+    F infimun();
+
+    __device__ inline static
+    F ulp_up(const F x);
+    __device__ inline static
+    F ulp_down(const F x);
+
+    __device__ __host__ inline static
+    F nan();
+};
+
+
+// Specialization for float
+template<>
+class CudaRounder<float> {
+  public:
+
+    __device__ inline static
+    float add_down(const float x, const float y)
+    {
+        return __fadd_rd(x, y);
+    }
+
+    __device__ inline static
+    float add_up(const float x, const float y)
+    {
+        return __fadd_ru(x, y);
+    }
+
+    __device__ inline static
+    float sub_down(const float x, const float y)
+    {
+        return __fadd_rd(x, -y);
+    }
+
+    __device__ inline static
+    float sub_up(const float x, const float y)
+    {
+        return __fadd_ru(x, -y);
+    }
+
+    __device__ inline static
+    float mul_down(const float x, const float y)
+    {
+        return __fmul_rd(x, y);
+    }
+
+    __device__ inline static
+    float mul_up(const float x, const float y)
+    {
+        return __fmul_ru(x, y);
+    }
+
+    __device__ inline static
+    float div_down(const float x, const float y)
+    {
+        return __fdiv_rd(x, y);
+    }
+
+    __device__ inline static
+    float div_up(const float x, const float y)
+    {
+        return __fdiv_ru(x, y);
+    }
+
+		__device__ inline static
+    float fma_down(float const a, float const  x, float const  y)
+		{
+				return __fmaf_rd(a, x, y);
+		}
+
+		__device__ inline static
+    float fma_up(float const  a, float const  x, float const  y)
+		{
+				return __fmaf_ru(a, x, y);
+		}
+
+    __device__ inline static
+    float sqrt_down(const float x)
+    {
+        return __fsqrt_rd(x);
+    }
+
+    __device__ inline static
+    float sqrt_up(const float x)
+    {
+        return __fsqrt_ru(x);
+    }
+
+    __device__ inline static
+    float int_down(const float x)
+    {
+        return floorf(x);
+    }
+
+    __device__ inline static
+    float int_up(const float x)
+    {
+        return ceilf(x);
+    }
+
+    __device__ inline static
+    float infimum()
+    {
+        return __int_as_float(0xff800000);
+    }
+
+    __device__ inline static
+    float supremum()
+    {
+        return __int_as_float(0x7f800000);
+    }
+
+    __device__ inline static
+    float ulp_up(const float x)
+    {
+        return nextafterf(x, CudaRounder<float>::supremum());
+    }
+
+    __device__ inline static
+    float ulp_down(const float x)
+    {
+        return nextafterf(x, CudaRounder<float>::infimum());
+    }
+
+    __device__ __host__ inline static
+    float nan()
+    {
+        return nanf("");
+    }
+};
+
+
+// Specialization for double
+template<>
+class CudaRounder<double> {
+  public:
+
+    __device__ inline static
+    double add_down(const double x, const double y)
+    {
+        return __dadd_rd(x, y);
+    }
+
+    __device__ inline static
+    double add_up(const double x, const double y)
+    {
+        return __dadd_ru(x, y);
+    }
+
+    __device__ inline static
+    double sub_down(const double x, const double y)
+    {
+        return __dadd_rd(x, -y);
+    }
+
+    __device__ inline static
+    double sub_up(const double x, const double y)
+    {
+        return __dadd_ru(x, -y);
+    }
+
+    __device__ inline static
+    double mul_down(const double x, const double y)
+    {
+        return __dmul_rd(x, y);
+    }
+
+    __device__ inline static
+    double mul_up(const double x, const double y)
+    {
+        return __dmul_ru(x, y);
+    }
+
+    __device__ inline static
+    double div_down(const double x, const double y)
+    {
+        return __ddiv_rd(x, y);
+    }
+
+    __device__ inline static
+    double div_up(const double x, const double y)
+    {
+        return __ddiv_ru(x, y);
+    }
+
+		__device__ inline static
+    double fma_down(double const a, double const x, double const y)
+		{
+				return __fma_rd(a, x, y);
+		}
+
+		__device__ inline static
+    double fma_up(double const  a, double const x, double const y)
+		{
+				return __fma_ru(a, x, y);
+		}
+
+    __device__ inline static
+    double sqrt_down(const double x)
+    {
+        return __dsqrt_rd(x);
+    }
+
+    __device__ inline static
+    double sqrt_up(const double x)
+    {
+        return __dsqrt_ru(x);
+   }
+
+    __device__ inline static
+    double int_down(const double x)
+    {
+        return floor(x);
+    }
+
+    __device__ inline static
+    double int_up(const double x)
+    {
+        return ceil(x);
+    }
+
+    __device__ inline static
+    double infimum()
+    {
+        return __longlong_as_double(0xfff0000000000000ull);
+    }
+
+    __device__ inline static
+    double supremum()
+    {
+        return __longlong_as_double(0x7ff0000000000000ull);
+    }
+
+    __device__ inline static
+    double ulp_up(const double x)
+    {
+        return nextafter(x, CudaRounder<double>::supremum());
+    }
+
+    __device__ inline static
+    double ulp_down(const double x)
+    {
+        return nextafter(x, CudaRounder<double>::infimum());
+    }
+
+    __device__ __host__ inline static
+    double nan()
+    {
+        return ::nan("");
+    }
+};
+
+
+} // namespace intlag
+
+#endif
+
+
+

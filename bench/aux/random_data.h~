@@ -1,0 +1,159 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2014 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+
+#ifndef REFERENCE_H
+#define REFERENCE_H
+
+#include "timer.h"
+#include <cstdlib>
+#include "gtest/gtest.h"
+
+// TODO: Include Interval Class
+#include "../include/blas/cuda_blas.h"
+
+#define MULTIPLIER 3.0
+
+// Defines a singleton class with random data inputs and reference results for all test operations
+
+
+namespace intlag
+{
+namespace bench
+{
+
+class Reference;
+Reference* reference = NULL;
+
+class Reference {
+
+  Reference(){ length = 0; }
+
+  Reference(int argc, char** argv, int n){
+    if (argc == 1) __random_init(n);
+    else __input_init(argc, argv);
+  }
+
+  double __random_interval();
+  void __random_init(int n);
+  void __input_init(int argc, char** argv);
+
+
+  public:
+
+    ~Reference(){
+      if (length == 0) return;
+
+      // Desaloca
+      free(x); free(dx);
+      free(y); free(dy);
+    }
+
+    static void setValues(int argc, char** argv, int n);
+    static Reference* getInstance();
+
+    int length;
+    Interval<double> dalpha, dbeta;
+    Interval<float> alpha, beta;
+    Interval<double>* dx, dy;
+    Interval<float>* x, y;
+};
+
+
+
+void Reference::setValues(int argc, char** argv, int n){
+  // Not thread safe
+  if (reference == NULL) {
+    if (n == 0 && argc == 1) reference = new Reference();
+    else reference = new Reference(argc, argv, n);
+  }
+}
+
+
+Reference* Reference::getInstance() {
+  return reference;
+}
+
+
+// Generates a random number in [-MULTIPLIER, MULTIPLIER]
+void Reference::__random_interval() {
+  double x, y;
+  x = (2*MULTIPLIER*rand())/RAND_MAX - MULTIPLIER;
+  y = (2*MULTIPLIER*rand())/RAND_MAX - MULTIPLIER;
+  if(x < y){
+    double z = x;
+    x = y;
+    y = z;
+  }
+  return Interval<double>(x, y);
+}
+
+
+void Reference::__random_init(int n){
+
+  length = n;
+
+  alpha = dalpha = __random_interval();
+  beta = dbeta = __random_interval();
+
+  x = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  y = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  dx = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  dy = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  if (x == NULL || y == NULL || dx == NULL || dy = NULL) {
+    printf("Error, not enough memory for benchmark reference values!\n");
+    exit(1);
+  }
+
+  for (int i = 0; i < length; ++i){
+    x[i] = dx[i] = __random_interval();
+    y[i] = dy[i] = __random_interval();
+  }
+}
+
+
+void Reference::__input_init(int argc, char** argv) {
+  double aux, aux2;
+
+  cin >> length;
+
+	cin >> aux; cin >> aux2;
+	alpha = dalpha = Interval(aux, aux2);
+	cin >> aux; cin >> aux2;
+	beta = dbeta = Interval(aux, aux2);
+
+  x = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  y = (Interval<float>*) malloc(length*sizeof(Interval<float>));
+  dx = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  dy = (Interval<double>*) malloc(length*sizeof(Interval<double>));
+  if (x == NULL || y == NULL || dx == NULL || dy = NULL) {
+    printf("Error, not enough memory for benchmark reference values!\n");
+    exit(1);
+  }
+
+  for (int i = 0; i < length; ++i){
+    cin >> aux; cin >> aux2;
+    x[i] = dx[i] = Interval<double>(aux, aux2);
+		
+	}
+	for (int i = 0; i < length; ++i){
+		cin >> aux; cin >> aux2;
+    y[i] = dy[i] = Interval<double>(aux, aux2);
+  }
+}
+
+
+
+} // namespace bench
+} // namespace intlag
+
+#endif
+
+
+

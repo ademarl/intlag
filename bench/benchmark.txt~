@@ -1,0 +1,18 @@
+
+======================================================================
+
+IntLAG Benchmark
+
+Number of repetitions: 1
+Largest Array Size: 1048576
+Random Seed: 1431483980
+
+CudaKernelBench.AXPY.Double(100 times): 3.27071 seconds.
+CudaKernelBench.AXPY.Float(100 times): 1.75841 seconds.
+CudaKernelBench.Gemm.Double(100 times): 4.34827 seconds.
+CudaKernelBench.Gemm.Float(100 times): 2.22844 seconds.
+CudaKernelBench.Gemv.Double(100 times): 1.129 seconds.
+CudaKernelBench.Gemv.Float(100 times): 0.595956 seconds.
+
+======================================================================
+

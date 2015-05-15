@@ -1,0 +1,93 @@
+
+
+
+Modelar Dissertação
+Box / CudaBox  & Boxes2D
+
+
+3 Layers
+Givens
+Shared Memory
+2 lvl2
+2 lvl3
+OMP testes
+
+1 semana High-level
+
+2 weeks BLAS
+
+
+
+
+
+
+
+
+
+
+Expandir Blas
+Givens, lvl2, lvl3
+
+3 blas levels for CUDA
+	- no memory management
+	- memory management
+	- box level (no 'n' or 'm')
+
+
+
+
+
+
+Reescrever testes com fixture singleton
+Testes dos assignments dos intervals e cudaintervals
+Funcoes e metodos com intervalos ou escalares
+OMPBlas -testes
+
+
+
+Montar Box e CudaBox acima dos blas
+
+
+
+
+
+
+
+
+
+
+
+CudaRounder
+  -expandir implementacao
+
+CudaInterval
+  - testes dos assignments novos
+  - mais assignments
+
+SerialBlas
+  -testes
+
+OMPBlas
+  -swap, acopy
+  -testes
+
+CuBlas
+  -Managed
+
+Montar Box e CudaBox acima dos blas
+
+
+
+
+Benchmark
+  - Separar Referencias entre float e double
+  - Lazy evaluation of reference computed values
+
+
+Exemplos
+
+Documentacao
+
+Interval lib
+  soma, sub, disisao c numero
+  div, tratar caso c zero, intervalos infinitos

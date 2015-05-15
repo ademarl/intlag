@@ -1,0 +1,149 @@
+
+//------------------------------------------------------------------------------
+// Copyright (c) 2013 Ademar Marques Lacerda Filho
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//------------------------------------------------------------------------------
+
+#ifndef INTERVAL_TEST
+#define INTERVAL_TEST
+
+#include "stdio.h"
+#include "gtest/gtest.h"
+
+#include "gpu_interval.h"
+#include "interval_cr_lib.h"
+
+using namespace intlag;
+
+typedef interval_cr<float> If_t;
+typedef interval_cr<double> Id_t;
+
+
+
+//////////////////////////////////////////////////////////// Kernels ///////////
+template <class T>
+__global__ void add(T a, T b, T *c){
+	*c = a + b;
+}
+
+template <class T>
+__global__ void scalL(double alpha, T x, T *y){
+	*y = alpha*x;
+}
+
+template <class T>
+__global__ void scalR(double alpha, T x, T *y){
+	*y =x*alpha;
+}
+
+template <class T>
+__global__ void mult(T x, T y, T* z){
+	*z = x*y;
+}
+
+///////////////////////////////////////////////////////////// ~Kernels /////////
+
+
+////////////////////////////////////////////////////////// CUDA Functions //////
+template <class T>
+void sum_intervals(T a, T b, T *c){
+
+	T *d_c;
+	CHECKED_CALL( cudaMalloc((void**)&d_c, sizeof(T)) );
+	add<<<1,1>>>(a, b, d_c);
+	CHECKED_CALL( cudaMemcpy(c, d_c, sizeof(T), cudaMemcpyDeviceToHost) );
+	CHECKED_CALL( cudaFree(d_c) );
+}
+
+template <class T>
+void scalL_intervals(double alpha, T x, T *y){
+
+	T *d_y;
+	CHECKED_CALL( cudaMalloc((void**)&d_y, sizeof(T)) );
+	scalL<<<1,1>>>(alpha, x, d_y);
+	CHECKED_CALL( cudaMemcpy(y, d_y, sizeof(T), cudaMemcpyDeviceToHost) );
+	CHECKED_CALL( cudaFree(d_y) );
+}
+
+
+template <class T>
+void scalR_intervals(double alpha, T x, T *y){
+
+	T *d_y;
+	CHECKED_CALL( cudaMalloc((void**)&d_y, sizeof(T)) );
+	scalR<<<1,1>>>(alpha, x, d_y);
+	CHECKED_CALL( cudaMemcpy(y, d_y, sizeof(T), cudaMemcpyDeviceToHost) );
+	CHECKED_CALL( cudaFree(d_y) );
+}
+
+
+template <class T>
+void mult_intervals(T a, T b, T *c){
+
+	T *d_c;
+	CHECKED_CALL( cudaMalloc((void**)&d_c, sizeof(T)) );
+	mult<<<1,1>>>(a, b, d_c);
+	CHECKED_CALL( cudaMemcpy(c, d_c, sizeof(T), cudaMemcpyDeviceToHost) );
+	CHECKED_CALL( cudaFree(d_c) );
+}
+
+
+////////////////////////////////////////////////////////// ~CUDA Functions /////
+
+class IntervalTest : public ::testing::Test{
+
+	protected:
+
+	virtual void SetUp(){	
+		c = Id_t(5.0);
+		x = Id_t(10.0, 2.0);	
+		y = Id_t(-5.0, 10.0);
+		z = Id_t();
+	}
+
+	Id_t c, x, y, z;
+};
+
+TEST_F(IntervalTest, Create) {
+
+	EXPECT_DOUBLE_EQ(c.center(), 5.0);
+	EXPECT_DOUBLE_EQ(c.radius(), 0.0);
+
+	EXPECT_DOUBLE_EQ(x.center(), 10.0);
+	EXPECT_DOUBLE_EQ(x.radius(), 2.0);
+};
+
+
+TEST_F(IntervalTest, Addition) {
+
+	sum_intervals(x, y, &z);
+	EXPECT_DOUBLE_EQ(z.center(), 5.0);
+	EXPECT_NEAR(z.radius(), 12.0, 0.00001);
+};
+
+TEST_F(IntervalTest, ScalMultL) {
+
+	scalL_intervals(3, x, &z);
+	EXPECT_DOUBLE_EQ(z.center(), 30.0);
+	EXPECT_NEAR(z.radius(), 6.0, 0.00001);
+};
+
+TEST_F(IntervalTest, ScalMultR) {
+
+	scalR_intervals(3, x, &z);
+	EXPECT_DOUBLE_EQ(z.center(), 30.0);
+	EXPECT_NEAR(z.radius(), 6.0, 0.00001);
+};
+
+TEST_F(IntervalTest, MULT) {
+
+	mult_intervals(x, y, &z);
+	EXPECT_DOUBLE_EQ(z.center(), -50.0);
+	EXPECT_NEAR(z.radius(), 130.0, 0.00001);
+};
+
+
+#endif
